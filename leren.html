@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Begrippen Leren</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --card: #1a1a1a;
+    --accent: #c8f135;
+    --text: #f0f0f0;
+    --muted: #666;
+    --border: #2a2a2a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    letter-spacing: -2px;
+    margin-bottom: 6px;
+  }
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-bottom: 40px;
+  }
+
+  /* MODE TABS */
+  .modes {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 36px;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 6px;
+    border: 1px solid var(--border);
+  }
+  .mode-btn {
+    padding: 10px 22px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+  .mode-btn.active {
+    background: var(--accent);
+    color: #000;
+  }
+
+  /* FILTER PILLS */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 32px;
+    justify-content: center;
+  }
+  .filter-pill {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-pill.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(200,241,53,0.08);
+  }
+
+  /* ===== FLASHCARD MODE ===== */
+  #mode-flash { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 600px; }
+
+  .progress-bar {
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 99px;
+    margin-bottom: 20px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+  .progress-text {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 28px;
+    align-self: flex-end;
+  }
+
+  .card-scene {
+    width: 100%;
+    perspective: 1200px;
+    margin-bottom: 28px;
+  }
+  .card-inner {
+    width: 100%;
+    min-height: 220px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+  .card-inner.flipped { transform: rotateY(180deg); }
+
+  .card-face {
+    position: absolute; top: 0; left: 0; right: 0;
+    min-height: 220px;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 36px 32px;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+  .card-front { background: var(--card); }
+  .card-back {
+    background: #1e2a0a;
+    border-color: var(--accent);
+    transform: rotateY(180deg);
+  }
+  .card-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .card-back .card-label { color: rgba(200,241,53,0.6); }
+  .card-word {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 10px;
+  }
+  .card-category {
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 99px;
+    background: rgba(255,255,255,0.06);
+    color: var(--muted);
+  }
+  .card-hint { font-size: 0.85rem; color: rgba(200,241,53,0.5); margin-top: 8px; }
+  .card-def {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: #d4f06e;
+  }
+
+  .flash-actions {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+  }
+  .flash-btn {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-wrong { background: #2a1a1a; color: #ff6b6b; border: 1px solid #3a2020; }
+  .btn-wrong:hover { background: #3a1f1f; }
+  .btn-right { background: #1a2a0a; color: var(--accent); border: 1px solid #2a3a10; }
+  .btn-right:hover { background: #233510; }
+  .btn-flip {
+    width: 100%;
+    padding: 14px;
+    border: 1px dashed var(--border);
+    background: transparent;
+    color: var(--muted);
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+  }
+  .btn-flip:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ===== LIST MODE ===== */
+  #mode-list { display: none; width: 100%; max-width: 760px; }
+  .list-search {
+    width: 100%;
+    padding: 14px 18px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    margin-bottom: 20px;
+    outline: none;
+    transition: border 0.2s;
+  }
+  .list-search:focus { border-color: var(--accent); }
+  .list-search::placeholder { color: var(--muted); }
+
+  .list-grid { display: flex; flex-direction: column; gap: 2px; }
+  .list-item {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 16px 20px;
+    background: var(--card);
+    border-radius: 10px;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    animation: fadeUp 0.3s ease both;
+  }
+  .list-item:hover { border-color: var(--border); transform: translateX(4px); }
+  .list-term {
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 220px;
+    flex-shrink: 0;
+  }
+  .list-def { font-size: 0.9rem; color: #aaa; line-height: 1.5; }
+  .list-cat {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 99px;
+    margin-left: auto;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* ===== QUIZ MODE ===== */
+  #mode-quiz { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 600px; }
+  .quiz-question {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .quiz-q-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 14px; }
+  .quiz-q-text { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 700; }
+  .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+  .quiz-opt {
+    padding: 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-align: left;
+    line-height: 1.4;
+    transition: all 0.2s;
+  }
+  .quiz-opt:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .quiz-opt.correct { background: #1a2a0a; border-color: var(--accent); color: var(--accent); }
+  .quiz-opt.wrong { background: #2a1a1a; border-color: #ff6b6b; color: #ff6b6b; }
+  .quiz-opt:disabled { cursor: default; }
+  .quiz-feedback {
+    margin-top: 18px;
+    font-size: 0.9rem;
+    color: var(--muted);
+    min-height: 24px;
+    transition: all 0.2s;
+  }
+  .quiz-next {
+    margin-top: 16px;
+    padding: 13px 32px;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #000;
+    cursor: pointer;
+    display: none;
+    transition: transform 0.15s;
+  }
+  .quiz-next:hover { transform: scale(1.03); }
+  .quiz-score {
+    font-family: 'Syne', sans-serif;
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--accent);
+    text-align: center;
+  }
+  .quiz-score-sub { color: var(--muted); text-align: center; margin-bottom: 24px; }
+
+  /* Category colors */
+  .cat-werk { background: rgba(59,130,246,0.12); color: #60a5fa; }
+  .cat-verzorgingsstaat { background: rgba(168,85,247,0.12); color: #c084fc; }
+  .cat-criminaliteit { background: rgba(239,68,68,0.12); color: #f87171; }
+
+  /* Score display */
+  .score-display {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .score-display span { color: var(--text); font-weight: 500; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .card-scene { animation: slideIn 0.35s ease; }
+
+  .result-screen { text-align: center; animation: fadeUp 0.4s ease; }
+  .restart-btn {
+    margin-top: 20px;
+    padding: 13px 32px;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #000;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<h1>Begrippen <span>Leren</span></h1>
+<p class="subtitle">Maatschappijleer · KGT · Werk & Criminaliteit</p>
+
+<div class="modes">
+  <button class="mode-btn active" onclick="setMode('flash')">🃏 Flashcards</button>
+  <button class="mode-btn" onclick="setMode('list')">📋 Lijst</button>
+  <button class="mode-btn" onclick="setMode('quiz')">🧠 Quiz</button>
+</div>
+
+<div class="filters">
+  <button class="filter-pill active" onclick="setFilter('all', this)">Alles</button>
+  <button class="filter-pill" onclick="setFilter('werk', this)">💼 Werk</button>
+  <button class="filter-pill" onclick="setFilter('verzorgingsstaat', this)">🏥 Verzorgingsstaat</button>
+  <button class="filter-pill" onclick="setFilter('criminaliteit', this)">⚖️ Criminaliteit</button>
+</div>
+
+<!-- FLASHCARD MODE -->
+<div id="mode-flash">
+  <div class="score-display">
+    <div>✅ Goed: <span id="score-good">0</span></div>
+    <div>❌ Fout: <span id="score-bad">0</span></div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+  <div class="progress-text" id="progress-text"></div>
+  <div class="card-scene" id="card-scene">
+    <div class="card-inner" id="card-inner" onclick="flipCard()">
+      <div class="card-face card-front">
+        <div class="card-label">Begrip</div>
+        <div class="card-word" id="card-word"></div>
+        <div class="card-category" id="card-cat"></div>
+        <div class="card-hint" style="margin-top:20px; font-size:0.78rem">Klik om definitie te zien →</div>
+      </div>
+      <div class="card-face card-back">
+        <div class="card-label">Definitie</div>
+        <div class="card-def" id="card-def"></div>
+      </div>
+    </div>
+  </div>
+  <button class="btn-flip" onclick="flipCard()">↩ Omdraaien</button>
+  <div class="flash-actions">
+    <button class="flash-btn btn-wrong" onclick="answer(false)">✗ Wist ik niet</button>
+    <button class="flash-btn btn-right" onclick="answer(true)">✓ Wist ik het!</button>
+  </div>
+</div>
+
+<!-- LIST MODE -->
+<div id="mode-list">
+  <input class="list-search" type="text" placeholder="🔍 Zoek een begrip..." oninput="filterList(this.value)">
+  <div class="list-grid" id="list-grid"></div>
+</div>
+
+<!-- QUIZ MODE -->
+<div id="mode-quiz">
+  <div id="quiz-main">
+    <div class="quiz-question">
+      <div class="quiz-q-label">Wat betekent dit begrip?</div>
+      <div class="quiz-q-text" id="quiz-word"></div>
+    </div>
+    <div class="quiz-options" id="quiz-options"></div>
+    <div class="quiz-feedback" id="quiz-feedback"></div>
+    <button class="quiz-next" id="quiz-next" onclick="nextQuiz()">Volgende →</button>
+  </div>
+  <div id="quiz-result" class="result-screen" style="display:none">
+    <div class="quiz-score" id="quiz-final-score"></div>
+    <div class="quiz-score-sub" id="quiz-final-sub"></div>
+    <button class="restart-btn" onclick="startQuiz()">Opnieuw proberen 🔄</button>
+  </div>
+</div>
+
+<script>
+const ALL_WORDS = [
+  { term: "Piramide van Maslow", def: "5 basisbehoeften van de mens op een piramide, van laag (eten/slapen) naar hoog (zelfontplooiing).", cat: "werk" },
+  { term: "Maatschappelijke participatie", def: "Meedoen in de samenleving, bijv. door te werken.", cat: "werk" },
+  { term: "Maatschappelijke positie", def: "De plek die iemand inneemt in de samenleving, bepaald door opleiding, beroep en inkomen.", cat: "werk" },
+  { term: "Kansenongelijkheid", def: "Niet iedereen heeft gelijke kansen in de samenleving.", cat: "werk" },
+  { term: "Positieve discriminatie", def: "Bewust voorkeur geven aan achtergestelde groepen om ongelijkheid op de arbeidsmarkt te verkleinen.", cat: "werk" },
+  { term: "Opzegtermijn", def: "Periode tussen ontslag en de laatste werkdag, waarin je nog doorwerkt.", cat: "werk" },
+  { term: "Arbeidsovereenkomst", def: "Contract tussen werkgever en werknemer over loon, werktijden en vakantiedagen.", cat: "werk" },
+  { term: "Arbeidstijdenwet", def: "Wet met regels over werktijden en pauzes van werknemers.", cat: "werk" },
+  { term: "Arbowet", def: "Wet die eisen stelt aan gezonde en veilige werkplekken.", cat: "werk" },
+  { term: "Cao", def: "Collectieve arbeidsovereenkomst: afspraken over arbeidsvoorwaarden voor alle werknemers in een hele bedrijfstak.", cat: "werk" },
+  { term: "Brutoloon", def: "Het loon dat je afspreekt in je contract, vóór aftrek van belasting en premies.", cat: "werk" },
+  { term: "Nettoloon", def: "Het bedrag dat je daadwerkelijk ontvangt, ná aftrek van belasting en premies.", cat: "werk" },
+  { term: "Verzorgingsstaat", def: "Systeem waarbij de overheid mensen helpt die het tijdelijk niet zelf redden (ziekte, werkloosheid, ouderdom).", cat: "verzorgingsstaat" },
+  { term: "Kinderbijslag", def: "Uitkering voor mensen met kinderen, betaald uit de belastingen.", cat: "verzorgingsstaat" },
+  { term: "Bijstand", def: "Uitkering voor mensen zonder werk én zonder recht op WW of WIA.", cat: "verzorgingsstaat" },
+  { term: "WIA", def: "Uitkering voor mensen die door ziekte of handicap niet (meer) kunnen werken.", cat: "verzorgingsstaat" },
+  { term: "WW", def: "Werkloosheidswet: uitkering voor mensen die hun baan verliezen.", cat: "verzorgingsstaat" },
+  { term: "Criminaliteit", def: "Alle wettelijk verboden gedragingen die schade toebrengen aan de samenleving.", cat: "criminaliteit" },
+  { term: "Plaatsgebonden criminaliteit", def: "Wat strafbaar is, verschilt per land of regio.", cat: "criminaliteit" },
+  { term: "Tijdsgebonden criminaliteit", def: "Wat strafbaar is, verandert door de tijd. Wetten passen zich aan.", cat: "criminaliteit" },
+  { term: "Overtreding", def: "Licht strafbaar feit (bijv. zonder helm fietsen) → meestal een boete.", cat: "criminaliteit" },
+  { term: "Misdrijf", def: "Ernstig strafbaar feit (bijv. diefstal, mishandeling) → politieverhoor en eventueel rechtszaak.", cat: "criminaliteit" },
+  { term: "Verdachte", def: "Iemand van wie de politie denkt dat die iets strafbaars heeft gedaan.", cat: "criminaliteit" },
+  { term: "Proces-verbaal", def: "Officieel politieverslag van een misdrijf met alle feiten en bevindingen.", cat: "criminaliteit" },
+  { term: "Strafbeschikking", def: "Straf opgelegd door de officier van justitie, zonder tussenkomst van een rechter.", cat: "criminaliteit" },
+  { term: "Seponeren", def: "De officier van justitie stopt de zaak; de verdachte wordt niet vervolgd.", cat: "criminaliteit" },
+  { term: "Vervolgen", def: "De officier van justitie brengt de zaak voor de rechter.", cat: "criminaliteit" },
+  { term: "TBS", def: "Terbeschikkingstelling: maatregel voor ontoerekeningsvatbare daders; behandeling in plaats van gewone straf.", cat: "criminaliteit" },
+  { term: "Doelen van straffen", def: "Afschrikking, gedragsverbetering van de dader, genoegdoening voor slachtoffer en bescherming van de samenleving.", cat: "criminaliteit" },
+  { term: "Repressie", def: "Criminaliteit onderdrukken nádat een misdrijf is gepleegd, bijv. door arrestatie.", cat: "criminaliteit" },
+  { term: "Preventie", def: "Criminaliteit vóórkomen voordat het gebeurt, bijv. door meer toezicht of sociale programma's.", cat: "criminaliteit" },
+];
+
+let currentFilter = 'all';
+let currentMode = 'flash';
+let deck = [];
+let cardIndex = 0;
+let scoreGood = 0;
+let scoreBad = 0;
+let isFlipped = false;
+
+// Quiz state
+let quizWords = [];
+let quizIndex = 0;
+let quizScore = 0;
+
+function getFiltered() {
+  if (currentFilter === 'all') return [...ALL_WORDS];
+  return ALL_WORDS.filter(w => w.cat === currentFilter);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  resetFlash();
+  buildList();
+  if (currentMode === 'quiz') startQuiz();
+}
+
+function setMode(m) {
+  currentMode = m;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('mode-flash').style.display = m === 'flash' ? 'flex' : 'none';
+  document.getElementById('mode-list').style.display = m === 'list' ? 'block' : 'none';
+  document.getElementById('mode-quiz').style.display = m === 'quiz' ? 'flex' : 'none';
+  if (m === 'list') buildList();
+  if (m === 'quiz') startQuiz();
+}
+
+// ===== FLASH =====
+function resetFlash() {
+  deck = shuffle(getFiltered());
+  cardIndex = 0; scoreGood = 0; scoreBad = 0;
+  document.getElementById('score-good').textContent = 0;
+  document.getElementById('score-bad').textContent = 0;
+  showCard();
+}
+
+function showCard() {
+  if (cardIndex >= deck.length) {
+    document.getElementById('card-word').textContent = '🎉 Klaar!';
+    document.getElementById('card-cat').textContent = `${scoreGood}/${deck.length} goed`;
+    document.getElementById('card-def').textContent = 'Je hebt alle begrippen gehad. Zet filter aan om opnieuw te starten.';
+    document.getElementById('progress-fill').style.width = '100%';
+    document.getElementById('progress-text').textContent = `${deck.length} / ${deck.length}`;
+    return;
+  }
+  const w = deck[cardIndex];
+  isFlipped = false;
+  document.getElementById('card-inner').classList.remove('flipped');
+  document.getElementById('card-word').textContent = w.term;
+  document.getElementById('card-def').textContent = w.def;
+  document.getElementById('card-cat').textContent = catLabel(w.cat);
+  const pct = (cardIndex / deck.length) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = `${cardIndex} / ${deck.length}`;
+  // re-trigger animation
+  const scene = document.getElementById('card-scene');
+  scene.style.animation = 'none';
+  scene.offsetHeight;
+  scene.style.animation = 'slideIn 0.35s ease';
+}
+
+function flipCard() {
+  isFlipped = !isFlipped;
+  document.getElementById('card-inner').classList.toggle('flipped', isFlipped);
+}
+
+function answer(correct) {
+  if (correct) { scoreGood++; document.getElementById('score-good').textContent = scoreGood; }
+  else { scoreBad++; document.getElementById('score-bad').textContent = scoreBad; }
+  cardIndex++;
+  showCard();
+}
+
+// ===== LIST =====
+function catLabel(cat) {
+  return cat === 'werk' ? '💼 Werk' : cat === 'verzorgingsstaat' ? '🏥 Verzorgingsstaat' : '⚖️ Criminaliteit';
+}
+
+function buildList(query = '') {
+  const words = getFiltered().filter(w =>
+    w.term.toLowerCase().includes(query.toLowerCase()) ||
+    w.def.toLowerCase().includes(query.toLowerCase())
+  );
+  const grid = document.getElementById('list-grid');
+  grid.innerHTML = words.map((w, i) => `
+    <div class="list-item" style="animation-delay:${i*0.03}s">
+      <div class="list-term">${w.term}</div>
+      <div class="list-def">${w.def}</div>
+      <div class="list-cat cat-${w.cat}">${catLabel(w.cat)}</div>
+    </div>
+  `).join('');
+}
+
+function filterList(q) { buildList(q); }
+
+// ===== QUIZ =====
+function startQuiz() {
+  quizWords = shuffle(getFiltered());
+  quizIndex = 0; quizScore = 0;
+  document.getElementById('quiz-main').style.display = 'block';
+  document.getElementById('quiz-result').style.display = 'none';
+  showQuiz();
+}
+
+function showQuiz() {
+  if (quizIndex >= quizWords.length) {
+    document.getElementById('quiz-main').style.display = 'none';
+    document.getElementById('quiz-result').style.display = 'block';
+    document.getElementById('quiz-final-score').textContent = `${quizScore} / ${quizWords.length}`;
+    const pct = Math.round((quizScore / quizWords.length) * 100);
+    const msg = pct >= 80 ? '🔥 Goed gedaan!' : pct >= 50 ? '👍 Aardig!' : '📚 Nog wat oefenen...';
+    document.getElementById('quiz-final-sub').textContent = `${pct}% correct · ${msg}`;
+    return;
+  }
+  const w = quizWords[quizIndex];
+  document.getElementById('quiz-word').textContent = w.term;
+  document.getElementById('quiz-feedback').textContent = '';
+  document.getElementById('quiz-next').style.display = 'none';
+
+  // Build 4 options
+  const others = shuffle(ALL_WORDS.filter(x => x.term !== w.term)).slice(0, 3);
+  const opts = shuffle([w, ...others]);
+
+  document.getElementById('quiz-options').innerHTML = opts.map((o, i) => `
+    <button class="quiz-opt" onclick="checkAnswer(this, '${o.term}', '${w.term}')">${o.def}</button>
+  `).join('');
+}
+
+function checkAnswer(btn, chosen, correct) {
+  document.querySelectorAll('.quiz-opt').forEach(b => b.disabled = true);
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    document.getElementById('quiz-feedback').textContent = '✅ Correct!';
+    quizScore++;
+  } else {
+    btn.classList.add('wrong');
+    document.getElementById('quiz-feedback').textContent = `❌ Fout. Het juiste antwoord was: "${correct}"`;
+    // Highlight correct
+    document.querySelectorAll('.quiz-opt').forEach(b => {
+      if (b.onclick?.toString().includes(`'${correct}'`)) b.classList.add('correct');
+    });
+  }
+  document.getElementById('quiz-next').style.display = 'block';
+}
+
+function nextQuiz() {
+  quizIndex++;
+  showQuiz();
+}
+
+// Init
+resetFlash();
+buildList();
+</script>
+</body>
+</html>
