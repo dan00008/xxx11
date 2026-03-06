@@ -481,6 +481,7 @@ let cardIndex = 0;
 let scoreGood = 0;
 let scoreBad = 0;
 let isFlipped = false;
+// wrongPile, totalCards, round are flash-specific state
 
 // Quiz state
 let quizWords = [];
@@ -521,21 +522,32 @@ function setMode(m) {
 }
 
 // ===== FLASH =====
+
 function resetFlash() {
-  deck = shuffle(getFiltered());
-  cardIndex = 0; scoreGood = 0; scoreBad = 0;
+  const base = shuffle(getFiltered());
+  wrongPile = base.map(w => ({ ...w }));
+  deck = [...wrongPile];
+  cardIndex = 0; scoreGood = 0; scoreBad = 0; round = 1;
+  totalCards = deck.length;
   document.getElementById('score-good').textContent = 0;
   document.getElementById('score-bad').textContent = 0;
   showCard();
 }
 
 function showCard() {
+  // End of current round
   if (cardIndex >= deck.length) {
-    document.getElementById('card-word').textContent = '🎉 Klaar!';
-    document.getElementById('card-cat').textContent = `${scoreGood}/${deck.length} goed`;
-    document.getElementById('card-def').textContent = 'Je hebt alle begrippen gehad. Zet filter aan om opnieuw te starten.';
-    document.getElementById('progress-fill').style.width = '100%';
-    document.getElementById('progress-text').textContent = `${deck.length} / ${deck.length}`;
+    if (wrongPile.length === 0) {
+      // ALL DONE 🎉
+      showFinished();
+      return;
+    }
+    // Start next round with only wrong cards
+    round++;
+    deck = shuffle([...wrongPile]);
+    wrongPile = [];
+    cardIndex = 0;
+    showRoundBanner();
     return;
   }
   const w = deck[cardIndex];
@@ -544,14 +556,40 @@ function showCard() {
   document.getElementById('card-word').textContent = w.term;
   document.getElementById('card-def').textContent = w.def;
   document.getElementById('card-cat').textContent = catLabel(w.cat);
-  const pct = (cardIndex / deck.length) * 100;
+
+  // Progress = how many unique cards mastered out of total
+  const mastered = totalCards - deck.length + cardIndex - wrongPile.length;
+  const pct = Math.max(0, (mastered / totalCards)) * 100;
   document.getElementById('progress-fill').style.width = pct + '%';
-  document.getElementById('progress-text').textContent = `${cardIndex} / ${deck.length}`;
-  // re-trigger animation
+  document.getElementById('progress-text').textContent =
+    round > 1
+      ? `Ronde ${round} · nog ${deck.length - cardIndex} te gaan`
+      : `${cardIndex} / ${totalCards}`;
+
   const scene = document.getElementById('card-scene');
   scene.style.animation = 'none';
   scene.offsetHeight;
   scene.style.animation = 'slideIn 0.35s ease';
+}
+
+function showRoundBanner() {
+  const w = document.getElementById('card-word');
+  const d = document.getElementById('card-def');
+  const c = document.getElementById('card-cat');
+  w.textContent = `Ronde ${round}`;
+  d.textContent = `Je had ${deck.length} begrip${deck.length !== 1 ? 'pen' : ''} nog niet. Ga door! 💪`;
+  c.textContent = '';
+  document.getElementById('progress-text').textContent = `Ronde ${round} · ${deck.length} kaarten`;
+  document.getElementById('card-inner').classList.remove('flipped');
+  isFlipped = false;
+}
+
+function showFinished() {
+  document.getElementById('card-word').textContent = '🎉 Alles geweten!';
+  document.getElementById('card-cat').textContent = `${scoreGood} keer goed · ${scoreBad} keer fout`;
+  document.getElementById('card-def').textContent = `Super! Je kent nu alle ${totalCards} begrippen. Klik hieronder om opnieuw te beginnen.`;
+  document.getElementById('progress-fill').style.width = '100%';
+  document.getElementById('progress-text').textContent = `${totalCards} / ${totalCards} ✅`;
 }
 
 function flipCard() {
@@ -560,8 +598,16 @@ function flipCard() {
 }
 
 function answer(correct) {
-  if (correct) { scoreGood++; document.getElementById('score-good').textContent = scoreGood; }
-  else { scoreBad++; document.getElementById('score-bad').textContent = scoreBad; }
+  if (correct) {
+    scoreGood++;
+    document.getElementById('score-good').textContent = scoreGood;
+    // Card is mastered — don't add to wrongPile
+  } else {
+    scoreBad++;
+    document.getElementById('score-bad').textContent = scoreBad;
+    // Add to wrong pile to retry later
+    wrongPile.push(deck[cardIndex]);
+  }
   cardIndex++;
   showCard();
 }
